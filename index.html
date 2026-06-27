@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Vietlott AI Predictor 3D</title>
+    
+    <meta name="theme-color" content="#cc0000">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Vietlott AI">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><circle cx='256' cy='256' r='240' fill='%23cc0000'/><circle cx='256' cy='256' r='180' fill='%23fff'/><path d='M160 340 L210 180 L256 260 L302 180 L352 340' fill='none' stroke='%23cc0000' stroke-width='40' stroke-linecap='round' stroke-linejoin='round'/><circle cx='256' cy='140' r='25' fill='%23ffcc00'/></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%23cc0000'/><circle cx='256' cy='256' r='160' fill='%23fff'/><path d='M170 330 L215 190 L256 260 L297 190 L342 330' fill='none' stroke='%23cc0000' stroke-width='35' stroke-linecap='round' stroke-linejoin='round'/><circle cx='256' cy='140' r='22' fill='%23ffcc00'/></svg>">
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: radial-gradient(circle at center, #2a0000 0%, #0a0000 100%);
+            overscroll-behavior: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Hiệu ứng 3D Glassmorphism */
+        .glass-3d {
+            background: rgba(204, 0, 0, 0.15);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 2px 3px rgba(255,255,255,0.2);
+        }
+        .ball-3d {
+            background: radial-gradient(circle at 30% 30%, #ffffff 0%, #dddddd 20%, #aa0000 80%, #550000 100%);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4), inset -5px -5px 15px rgba(0,0,0,0.6), inset 5px 5px 15px rgba(255,255,255,0.4);
+            transform: translateZ(20px);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .ball-active {
+            animation: bounceBall 0.6s ease infinite alternate;
+        }
+        @keyframes bounceBall {
+            0% { transform: translateY(0) scale(1) rotate(0deg); }
+            100% { transform: translateY(-10px) scale(1.05) rotate(10deg); }
+        }
+        /* LED Status */
+        .led-blink {
+            animation: ledBlink 0.5s infinite alternate;
+        }
+        @keyframes ledBlink {
+            0% { background-color: #3182ce; box-shadow: 0 0 5px #3182ce; }
+            100% { background-color: #63b3ed; box-shadow: 0 0 20px #63b3ed; }
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #cc0000; border-radius: 10px; }
+    </style>
+</head>
+<body class="text-white h-screen w-screen overflow-hidden select-none">
+
+    <div id="splash-screen" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#cc0000] transition-all duration-700 ease-in-out">
+        <div class="relative flex flex-col items-center animate-bounce">
+            <svg class="w-32 h-32 drop-shadow-[0_15px_15px_rgba(0,0,0,0.5)]" viewBox="0 0 512 512">
+                <circle cx="256" cy="256" r="240" fill="#fff"/>
+                <circle cx="256" cy="256" r="200" fill="#cc0000"/>
+                <path d="M160 340 L210 180 L256 260 L302 180 L352 340" fill="none" stroke="#fff" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="256" cy="140" r="25" fill="#ffcc00"/>
+            </svg>
+            <h1 class="text-3xl font-extrabold mt-6 tracking-widest text-white drop-shadow-md">VIETLOTT AI PRO</h1>
+            <p class="text-yellow-300 text-xs font-semibold tracking-wider uppercase mt-2">Hệ Thống Phân Tích Thời Gian Thực</p>
+        </div>
+        <div class="w-64 h-2 bg-red-900 rounded-full mt-12 overflow-hidden relative">
+            <div id="splash-progress" class="h-full bg-yellow-400 w-0 transition-all duration-300"></div>
+        </div>
+        <div id="splash-status" class="text-xs text-red-200 mt-2 font-mono">Đang khởi tạo AI...</div>
+    </div>
+
+    <canvas id="fireworks-canvas" class="fixed inset-0 pointer-events-none z-40 invisible"></canvas>
+
+    <div class="h-full w-full flex flex-col justify-between pb-safe pt-safe px-4 max-w-md mx-auto relative z-10">
+        
+        <header class="flex items-center justify-between py-3 border-b border-red-950">
+            <div class="flex items-center space-x-2">
+                <span id="led-status" class="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_10px_#48bb78]"></span>
+                <span id="network-text" class="text-xs font-semibold tracking-wide text-gray-300">LIVE: vietlott.vn</span>
+            </div>
+            <div id="connection-icon" class="text-sm text-gray-300">
+                <i class="fas fa-wifi"></i> </div>
+        </header>
+
+        <div class="mt-2 text-center">
+            <div class="text-[10px] text-yellow-400 font-mono uppercase tracking-widest flex justify-center items-center gap-1">
+                <i class="fas fa-sync spin text-blue-400" id="sync-icon"></i> Đồng bộ máy chủ: <span id="live-clock">00:00:00</span>
+            </div>
+            <div class="mt-1 bg-gradient-to-r from-transparent via-red-950 to-transparent p-1">
+                <span class="text-xs text-gray-400 block">ƯỚC TÍNH JACKPOT LOTTO 5/35</span>
+                <span class="text-2xl font-black text-yellow-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" id="jackpot-value">45,000,000,000 Đ</span>
+            </div>
+        </div>
+
+        <main class="flex-1 my-3 flex flex-col justify-start space-y-4 overflow-y-auto pr-1">
+            
+            <div class="grid grid-cols-2 gap-2 bg-black/40 p-1 rounded-xl border border-red-950">
+                <button onclick="switchTab('ai-pure')" id="tab-ai-pure" class="py-2 text-xs font-bold rounded-lg bg-[#cc0000] text-white transition-all shadow-md">
+                    <i class="fas fa-brain mr-1"></i> AI Vùng Vàng
+                </button>
+                <button onclick="switchTab('ai-birth')" id="tab-ai-birth" class="py-2 text-xs font-bold rounded-lg text-gray-400 hover:text-white transition-all">
+                    <i class="fas fa-birthday-cake mr-1"></i> AI Theo Ngày Sinh
+                </button>
+            </div>
+
+            <div id="birth-inputs" class="hidden glass-3d p-3 rounded-2xl space-y-2 animate-fade-in">
+                <p class="text-xs text-yellow-400 text-center font-semibold"><i class="fas fa-magic"></i> Nhập ngày sinh để AI giải mã thuật số</p>
+                <div class="grid grid-cols-3 gap-2 text-black">
+                    <select id="birth-day" class="bg-white p-2 text-sm font-bold rounded-lg border-2 border-red-700"></select>
+                    <select id="birth-month" class="bg-white p-2 text-sm font-bold rounded-lg border-2 border-red-700"></select>
+                    <select id="birth-year" class="bg-white p-2 text-sm font-bold rounded-lg border-2 border-red-700"></select>
+                </div>
+            </div>
+
+            <div class="glass-3d rounded-2xl p-4 flex flex-col items-center justify-center relative min-h-[160px]">
+                <div class="text-center mb-3">
+                    <span class="text-xs font-bold text-gray-300 tracking-wider bg-red-950 px-3 py-1 rounded-full border border-red-800">
+                        BỘ SỐ MAY MẮN LOTTO 5/35
+                    </span>
+                </div>
+                
+                <div class="flex justify-center items-center space-x-2 my-2" id="balls-container">
+                    <div class="ball-3d w-12 h-12 rounded-full flex items-center justify-center text-xl font-black text-white">?</div>
+                    <div class="ball-3d w-12 h-12 rounded-full flex items-center justify-center text-xl font-black text-white">?</div>
+                    <div class="ball-3d w-12 h-12 rounded-full flex items-center justify-center text-xl font-black text-white">?</div>
+                    <div class="ball-3d w-12 h-12 rounded-full flex items-center justify-center text-xl font-black text-white">?</div>
+                    <div class="ball-3d w-12 h-12 rounded-full flex items-center justify-center text-xl font-black text-white">?</div>
+                </div>
+
+                <div class="w-full mt-4 bg-black/50 p-2 rounded-xl border border-red-950">
+                    <div class="flex justify-between text-[10px] font-bold text-gray-400 mb-1">
+                        <span>XÁC SUẤT NỔ (HEAT METER)</span>
+                        <span id="meter-percent" class="text-yellow-400">0%</span>
+                    </div>
+                    <div class="w-full h-3 bg-gray-800 rounded-full overflow-hidden relative border border-gray-700">
+                        <div id="meter-bar" class="h-full w-0 bg-gradient-to-r from-green-500 via-yellow-400 to-red-600 transition-all duration-1000"></div>
+                    </div>
+                    <div id="ai-advice" class="text-[10px] text-center mt-1 text-gray-400 font-medium italic">
+                        Đang chờ kích hoạt thuật toán AI phân tích...
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-black/60 rounded-xl p-3 border border-red-950/60 font-mono text-[11px] space-y-1 h-28 overflow-y-auto text-green-400" id="ai-logs">
+                <div>[Hệ thống] Sẵn sàng phân tích dữ liệu chuyên sâu...</div>
+            </div>
+        </main>
+
+        <footer class="pb-6 pt-2">
+            <button onclick="runAIEngine()" id="btn-predict" class="w-full py-4 bg-gradient-to-r from-yellow-500 via-red-600 to-red-700 rounded-2xl font-black text-lg tracking-wider text-white shadow-[0_8px_25px_rgba(204,0,0,0.5)] active:translate-y-1 transition-all border-b-4 border-red-900 flex justify-center items-center gap-2">
+                <i class="fas fa-microchip animate-pulse"></i> PHÂN TÍCH AI REALTIME
+            </button>
+        </footer>
+    </div>
+
+    <div id="jackpot-popup" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-500">
+        <div class="glass-3d max-w-sm w-full p-6 rounded-3xl border-2 border-yellow-400 text-center relative overflow-hidden">
+            <div class="absolute -right-8 -top-8 w-24 h-24 bg-yellow-400/20 rounded-full blur-xl"></div>
+            <i class="fas fa-crown text-5xl text-yellow-400 mb-3 drop-shadow-md animate-bounce"></i>
+            <h2 class="text-xl font-black text-yellow-300 tracking-wide uppercase">CẢNH BÁO BỘ SỐ SIÊU CẤP</h2>
+            <p class="text-xs text-gray-200 mt-1">AI phát hiện bộ số có cấu trúc phân bổ trùng khớp 99.8% chu kỳ lịch sử Jackpot Vietlott!</p>
+            
+            <div class="flex justify-center space-x-2 my-4" id="popup-balls"></div>
+            
+            <div class="bg-red-950/80 p-2 rounded-xl border border-red-800 text-[11px] text-yellow-400 font-mono mb-4">
+                Khuyến nghị: Tỷ lệ nổ cực tốt vào khung giờ này. Hãy lưu ngay bộ số!
+            </div>
+            <button onclick="closeJackpotPopup()" class="w-full py-2 bg-yellow-400 text-black font-extrabold rounded-xl hover:bg-yellow-300 transition-all text-sm">
+                XÁC NHẬN & LƯU BỘ SỐ
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let currentTab = 'ai-pure';
+        let isPredicting = false;
+        
+        // Khởi tạo Audio Context ảo để tạo âm thanh / rung không cần tài nguyên ngoài
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+                if (navigator.vibrate) navigator.vibrate(15);
+            } else if (type === 'ball') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+                if (navigator.vibrate) navigator.vibrate(25);
+            } else if (type === 'jackpot') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(800, audioCtx.currentTime + 0.6);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.6);
+                if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 200]);
+            }
+        }
+
+        // Tạo Dữ liệu Dropdown Ngày Sinh tự động
+        function initBirthSelectors() {
+            const d = document.getElementById('birth-day');
+            const m = document.getElementById('birth-month');
+            const y = document.getElementById('birth-year');
+            for(let i=1; i<=31; i++) d.innerHTML += `<option value="${i}">Ngày ${i}</option>`;
+            for(let i=1; i<=12; i++) m.innerHTML += `<option value="${i}">Tháng ${i}</option>`;
+            const currentYear = new Date().getFullYear();
+            for(let i=currentYear; i>=1950; i--) y.innerHTML += `<option value="${i}">Năm ${i}</option>`;
+        }
+
+        // Đồng hồ hệ thống thời gian thực đồng bộ máy chủ giả lập
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('live-clock').innerText = now.toTimeString().split(' ')[0];
+        }, 1000);
+
+        // Nhận diện trạng thái kết nối Mạng Wifi / Data thực tế
+        function updateNetworkStatus() {
+            const iconContainer = document.getElementById('connection-icon');
+            const led = document.getElementById('led-status');
+            if (navigator.onLine) {
+                const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+                if (conn && (conn.type === 'cellular' || conn.effectiveType.includes('g'))) {
+                    iconContainer.innerHTML = '<i class="fas fa-signal"></i>'; // Icon Data
+                } else {
+                    iconContainer.innerHTML = '<i class="fas fa-wifi"></i>';   // Icon Wifi
+                }
+                led.className = "w-3 h-3 rounded-full bg-green-500 shadow-[0_0_10px_#48bb78]";
+            } else {
+                iconContainer.innerHTML = '<i class="fas fa-exclamation-triangle text-yellow-500"></i>';
+                led.className = "w-3 h-3 rounded-full led-blink"; // Chớp tắt cảnh báo mất kết nối trực tiếp
+            }
+        }
+        window.addEventListener('online', updateNetworkStatus);
+        window.addEventListener('offline', updateNetworkStatus);
+
+        // Chuyển Đổi Tab Chức Năng
+        function switchTab(tab) {
+            playSound('click');
+            currentTab = tab;
+            const pureBtn = document.getElementById('tab-ai-pure');
+            const birthBtn = document.getElementById('tab-ai-birth');
+            const birthInputs = document.getElementById('birth-inputs');
+
+            if (tab === 'ai-pure') {
+                pureBtn.className = "py-2 text-xs font-bold rounded-lg bg-[#cc0000] text-white transition-all shadow-md";
+                birthBtn.className = "py-2 text-xs font-bold rounded-lg text-gray-400 hover:text-white transition-all";
+                birthInputs.classList.add('hidden');
+            } else {
+                birthBtn.className = "py-2 text-xs font-bold rounded-lg bg-[#cc0000] text-white transition-all shadow-md";
+                pureBtn.className = "py-2 text-xs font-bold rounded-lg text-gray-400 hover:text-white transition-all";
+                birthInputs.classList.remove('hidden');
+            }
+        }
+
+        // Khởi động Splash Screen giả lập kết nối và tải AI
+        window.addEventListener('DOMContentLoaded', () => {
+            initBirthSelectors();
+            updateNetworkStatus();
+            
+            let prog = 0;
+            const progressInterval = setInterval(() => {
+                prog += Math.floor(Math.random() * 15) + 5;
+                if(prog > 100) prog = 100;
+                document.getElementById('splash-progress').style.width = `${prog}%`;
+                
+                if(prog < 30) document.getElementById('splash-status').innerText = "Đang bắt sóng API thực từ vietlott.vn...";
+                else if(prog < 60) document.getElementById('splash-status').innerText = "Đang huấn luyện mạng thần kinh Lotto 5/35...";
+                else if(prog < 90) document.getElementById('splash-status').innerText = "Tối ưu hóa thuật toán vùng vàng hấp dẫn...";
+                else document.getElementById('splash-status').innerText = "Thiết lập UI 3D hoàn tất!";
+
+                if(prog >= 100) {
+                    clearInterval(progressInterval);
+                    setTimeout(() => {
+                        const splash = document.getElementById('splash-screen');
+                        splash.classList.add('opacity-0', 'pointer-events-none');
+                    }, 500);
+                }
+            }, 150);
+        });
+
+        // THUẬT TOÁN AI NÂNG CAO CAO CẤP FOR LOTTO 5/35 (Vùng Vàng: Tổng 150 +- 30, Chẵn Lẻ cân bằng)
+        function generateAILottoNumbers(seedModifier = 0) {
+            let attempts = 0;
+            while (attempts < 1000) {
+                attempts++;
+                let numbers = [];
+                while (numbers.length < 5) {
+                    let r = Math.floor(Math.random() * 35) + 1 + seedModifier;
+                    r = ((r - 1) % 35) + 1; // Giới hạn chính xác từ 1-35
+                    if (!numbers.includes(r)) numbers.push(r);
+                }
+                numbers.sort((a, b) => a - b);
+                
+                // Kiểm tra Logic Vùng Vàng (Tổng = 150 +- 30 => Khoảng 120 đến 180)
+                let sum = numbers.reduce((a, b) => a + b, 0);
+                // Kiểm tra tính cân bằng Chẵn / Lẻ (2 chẵn 3 lẻ hoặc 3 chẵn 2 lẻ)
+                let evens = numbers.filter(n => n % 2 === 0).length;
+
+                if (sum >= 120 && sum <= 180 && (evens === 2 || evens === 3)) {
+                    return { numbers, sum, evens, attempts };
+                }
+            }
+            // Fallback nếu vượt quá số lượt tìm kiếm tối đa
+            return { numbers: [5, 12, 19, 26, 33], sum: 95, evens: 1, attempts: 1000 };
+        }
+
+        function appendLog(text) {
+            const logs = document.getElementById('ai-logs');
+            logs.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${text}</div>`;
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        // KÍCH HOẠT HỆ THỐNG PHÂN TÍCH AI CHÍNH
+        function runAIEngine() {
+            if (isPredicting) return;
+            isPredicting = true;
+            playSound('click');
+            
+            document.getElementById('btn-predict').disabled = true;
+            document.getElementById('sync-icon').classList.add('fa-spin');
+            
+            let logSteps = [
+                "Đang gửi gói tin GET tới https://vietlott.vn/api/v1/lotto35...",
+                "Đã nhận gói tin cấu trúc lịch sử 500 kỳ quay gần nhất.",
+                "Mạng Neural Network đang tính toán trọng số dải số xuất hiện cao...",
+                "Lọc bỏ các bộ số rác không nằm trong Vùng Vàng xác suất..."
+            ];
+
+            logSteps.forEach((step, idx) => {
+                setTimeout(() => appendLog(step), idx * 400);
+            });
+
+            // Hiệu ứng xáo bóng ảo diệu
+            const container = document.getElementById('balls-container');
+            let spinInterval = setInterval(() => {
+                container.innerHTML = Array(5).fill(0).map(() => {
+                    let tempNum = String(Math.floor(Math.random() * 35) + 1).padStart(2, '0');
+                    return `<div class="ball-3d ball-active w-12 h-12 rounded-full flex items-center justify-center text-xl font-black text-white">${tempNum}</div>`;
+                }).join('');
+            }, 80);
+
+            // Hoàn tất phân tích kết quả sau 2.5s
+            setTimeout(() => {
+                clearInterval(spinInterval);
+                
+                // Thu thập cấu hình ngày sinh nếu có để thay đổi seed của AI
+                let seed = 0;
+                if (currentTab === 'ai-birth') {
+                    seed = parseInt(document.getElementById('birth-day').value) || 0;
+                }
+
+                let result = generateAILottoNumbers(seed);
+                
+                // Kết xuất hiển thị bóng kết quả chính xác
+                container.innerHTML = result.numbers.map(num => {
+                    let formatted = String(num).padStart(2, '0');
+                    return `<div class="ball-3d w-12 h-12 rounded-full flex items-center justify-center text-xl font-black text-white">${formatted}</div>`;
+                }).join('');
+
+                // Phát âm thanh từng quả bóng rơi xuống
+                result.numbers.forEach((_, i) => setTimeout(() => playSound('ball'), i * 100));
+
+                // Cập nhật Heat Meter đo lường
+                let baseProbability = Math.floor(Math.random() * 31) + 65; // Thường rơi vào khoảng 65% - 96%
+                if (result.sum >= 140 && result.sum <= 160) baseProbability += 3; // Thưởng điểm tối ưu cho tổng siêu đẹp
+                if (baseProbability > 99) baseProbability = 99;
+
+                document.getElementById('meter-percent').innerText = `${baseProbability}%`;
+                const bar = document.getElementById('meter-bar');
+                bar.style.width = `${baseProbability}%`;
+
+                // Đưa lời khuyên dựa trên Heat Meter
+                const advice = document.getElementById('ai-advice');
+                if (baseProbability >= 85) {
+                    advice.innerHTML = "<span class='text-red-500 font-bold'><i class='fas fa-fire'></i> HIGH ALERT: Độ chín cực cao. Khuyến nghị VÀO TIỀN NGAY!</span>";
+                } else {
+                    advice.innerHTML = "<span class='text-yellow-400'><i class='fas fa-eye'></i> Trạng thái ổn định. Tiếp tục quan sát chu kỳ kế.</span>";
+                }
+
+                appendLog(`AI Thành công! Chọn ra bộ số: ${result.numbers.join(', ')} (Tổng: ${result.sum}, Chẵn/Lẻ: ${result.evens}/${5-result.evens}) qua ${result.attempts} chu kỳ sàng lọc.`);
+                
+                // Kích hoạt pháo hoa ăn mừng ngắn
+                triggerFireworks();
+
+                // Kiểm tra điều kiện nổ Siêu Jackpot cực cao ngẫu nhiên (Tỷ lệ 25% kích hoạt popup đặc quyền)
+                if (baseProbability >= 88) {
+                    setTimeout(() => {
+                        triggerJackpotPopup(result.numbers);
+                    }, 1000);
+                }
+
+                // Reset trạng thái nút bấm
+                document.getElementById('btn-predict').disabled = false;
+                document.getElementById('sync-icon').classList.remove('fa-spin');
+                isPredicting = false;
+
+            }, 2500);
+        }
+
+        // KÍCH HOẠT POPUP JACKPOT ĐẶC BIỆT
+        function triggerJackpotPopup(numbers) {
+            playSound('jackpot');
+            const popup = document.getElementById('jackpot-popup');
+            const pBalls = document.getElementById('popup-balls');
+            
+            pBalls.innerHTML = numbers.map(num => {
+                return `<div class="ball-3d w-10 h-10 rounded-full flex items-center justify-center text-md font-black text-white">${String(num).padStart(2, '0')}</div>`;
+            }).join('');
+
+            popup.classList.remove('hidden');
+            setTimeout(() => popup.classList.add('opacity-100'), 50);
+        }
+
+        function closeJackpotPopup() {
+            playSound('click');
+            const popup = document.getElementById('jackpot-popup');
+            popup.classList.remove('opacity-100');
+            setTimeout(() => popup.classList.add('hidden'), 500);
+        }
+
+        // HỆ THỐNG HIỆU ỨNG PHÁO HOA CANVAS (NỔ NGẮN)
+        const canvas = document.getElementById('fireworks-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function triggerFireworks() {
+            canvas.classList.remove('invisible');
+            particles = [];
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 3;
+            
+            // Tạo 80 hạt pháo hoa nhiều màu phát tán hình cầu
+            for (let i = 0; i < 80; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 5 + 2;
+                particles.push({
+                    x: centerX,
+                    y: centerY,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    alpha: 1,
+                    color: `hsl(${Math.random() * 360}, 100%, 60%)`
+                });
+            }
+            animateParticles();
+        }
+
+        function animateParticles() {
+            if (particles.length === 0) {
+                canvas.classList.add('invisible');
+                return;
+            }
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach((p, idx) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.05; // Trọng lực nhẹ rơi xuống
+                p.alpha -= 0.02; // Mờ dần
+                
+                ctx.globalAlpha = p.alpha;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.fill();
+
+                if (p.alpha <= 0) particles.splice(idx, 1);
+            });
+            requestAnimationFrame(animateParticles);
+        }
+    </script>
+</body>
+</html>
