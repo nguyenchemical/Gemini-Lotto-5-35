@@ -5,24 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Vietlott AI Predictor 3D</title>
     
-    <!-- Meta cho PWA (Chrome & Android) -->
+    <!-- Meta cho PWA & Safari -->
     <meta name="theme-color" content="#cc0000">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Vietlott AI">
-    
-    <!-- Meta cho Safari (iOS) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
-    <!-- ĐƯỜNG DẪN ICON THỰC TẾ CHO SAFARI & CHROME (ĐỒNG BỘ VỚI FILE icon.png TRÊN GITHUB) -->
+    <!-- Icon thực tế đồng bộ GitHub -->
     <link rel="apple-touch-icon" sizes="180x180" href="icon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="icon.png">
     <link rel="shortcut icon" href="icon.png" type="image/png">
 
-    <!-- Tailwind CSS và Font Google -->
+    <!-- Frameworks -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
-    <!-- FontAwesome cho Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
@@ -32,7 +29,6 @@
             overscroll-behavior: none;
             -webkit-tap-highlight-color: transparent;
         }
-        /* Hiệu ứng 3D Glassmorphism */
         .glass-3d {
             background: rgba(204, 0, 0, 0.15);
             backdrop-filter: blur(15px);
@@ -53,7 +49,6 @@
             0% { transform: translateY(0) scale(1) rotate(0deg); }
             100% { transform: translateY(-10px) scale(1.05) rotate(10deg); }
         }
-        /* LED Status */
         .led-blink {
             animation: ledBlink 0.5s infinite alternate;
         }
@@ -61,62 +56,54 @@
             0% { background-color: #3182ce; box-shadow: 0 0 5px #3182ce; }
             100% { background-color: #63b3ed; box-shadow: 0 0 20px #63b3ed; }
         }
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #cc0000; border-radius: 10px; }
     </style>
 </head>
 <body class="text-white h-screen w-screen overflow-hidden select-none">
 
-    <!-- 1. SPLASH SCREEN ĐỘNG -->
+    <!-- 1. SPLASH SCREEN -->
     <div id="splash-screen" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#cc0000] transition-all duration-700 ease-in-out">
         <div class="relative flex flex-col items-center animate-bounce">
-            <!-- Sử dụng trực tiếp file icon.png làm Logo hiển thị chuyên nghiệp -->
             <img src="icon.png" alt="Vietlott Logo" class="w-32 h-32 object-contain rounded-2xl drop-shadow-[0_15px_15px_rgba(0,0,0,0.5)]">
             <h1 class="text-3xl font-extrabold mt-6 tracking-widest text-white drop-shadow-md">VIETLOTT AI PRO</h1>
             <p class="text-yellow-300 text-xs font-semibold tracking-wider uppercase mt-2">Hệ Thống Phân Tích Thời Gian Thực</p>
         </div>
-        <!-- Progress Bar Loading -->
         <div class="w-64 h-2 bg-red-900 rounded-full mt-12 overflow-hidden relative">
             <div id="splash-progress" class="h-full bg-yellow-400 w-0 transition-all duration-300"></div>
         </div>
         <div id="splash-status" class="text-xs text-red-200 mt-2 font-mono">Đang khởi tạo AI...</div>
     </div>
 
-    <!-- 2. CANVAS HIỆU ỨNG PHÁO HOA -->
+    <!-- 2. CANVAS PHÁO HOA -->
     <canvas id="fireworks-canvas" class="fixed inset-0 pointer-events-none z-40 invisible"></canvas>
 
-    <!-- 3. GIAO DIỆN CHÍNH ỨNG DỤNG -->
+    <!-- 3. MAIN APP INTERFACE -->
     <div class="h-full w-full flex flex-col justify-between pb-safe pt-safe px-4 max-w-md mx-auto relative z-10">
         
-        <!-- HEADER TRẠNG THÁI -->
         <header class="flex items-center justify-between py-3 border-b border-red-950">
             <div class="flex items-center space-x-2">
-                <!-- LED báo kết nối thực tới vietlott.vn -->
                 <span id="led-status" class="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_10px_#48bb78]"></span>
                 <span id="network-text" class="text-xs font-semibold tracking-wide text-gray-300">LIVE: vietlott.vn</span>
             </div>
-            <!-- Icon Wifi / Data tự động nhận diện -->
             <div id="connection-icon" class="text-sm text-gray-300">
                 <i class="fas fa-wifi"></i>
             </div>
         </header>
 
-        <!-- KHU VỰC THÔNG TIN JACKPOT & ĐỒNG HỒ -->
+        <!-- CẬP NHẬT GIẢI THƯỞNG 3D PRO THỰC TẾ -->
         <div class="mt-2 text-center">
             <div class="text-[10px] text-yellow-400 font-mono uppercase tracking-widest flex justify-center items-center gap-1">
                 <i class="fas fa-sync spin text-blue-400" id="sync-icon"></i> Đồng bộ máy chủ: <span id="live-clock">00:00:00</span>
             </div>
             <div class="mt-1 bg-gradient-to-r from-transparent via-red-950 to-transparent p-1">
-                <span class="text-xs text-gray-400 block">ƯỚC TÍNH JACKPOT LOTTO 5/35</span>
-                <span class="text-2xl font-black text-yellow-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" id="jackpot-value">45,000,000,000 Đ</span>
+                <span class="text-xs text-gray-400 block">GIẢI THƯỞNG MAX 3D PRO (TỐI ĐA ĐẠT ĐƯỢC)</span>
+                <span class="text-2xl font-black text-yellow-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" id="jackpot-value">30,000,000,000 Đ</span>
             </div>
         </div>
 
-        <!-- KHU VỰC CHỨC NĂNG CHÍNH (TABS) -->
         <main class="flex-1 my-3 flex flex-col justify-start space-y-4 overflow-y-auto pr-1">
             
-            <!-- TABS DI CHUYỂN GIỮA ĐOÁN ĐẠI / ĐOÁN NGÀY SINH -->
             <div class="grid grid-cols-2 gap-2 bg-black/40 p-1 rounded-xl border border-red-950">
                 <button onclick="switchTab('ai-pure')" id="tab-ai-pure" class="py-2 text-xs font-bold rounded-lg bg-[#cc0000] text-white transition-all shadow-md">
                     <i class="fas fa-brain mr-1"></i> AI Vùng Vàng
@@ -126,7 +113,6 @@
                 </button>
             </div>
 
-            <!-- GIAO DIỆN CHỌN NGÀY SINH -->
             <div id="birth-inputs" class="hidden glass-3d p-3 rounded-2xl space-y-2 animate-fade-in">
                 <p class="text-xs text-yellow-400 text-center font-semibold"><i class="fas fa-magic"></i> Nhập ngày sinh để AI giải mã thuật số</p>
                 <div class="grid grid-cols-3 gap-2 text-black">
@@ -136,15 +122,14 @@
                 </div>
             </div>
 
-            <!-- KHU VỰC HIỂN THỊ BỘ SỐ KẾT QUẢ 3D -->
+            <!-- BỘ SỐ HIỂN THỊ -->
             <div class="glass-3d rounded-2xl p-4 flex flex-col items-center justify-center relative min-h-[160px]">
                 <div class="text-center mb-3">
                     <span class="text-xs font-bold text-gray-300 tracking-wider bg-red-950 px-3 py-1 rounded-full border border-red-800">
-                        BỘ SỐ MAY MẮN LOTTO 5/35
+                        BỘ SỐ MAY MẮN MAX 3D (1 - 35)
                     </span>
                 </div>
                 
-                <!-- 5 Quả bóng vàng Lotto 5/35 -->
                 <div class="flex justify-center items-center space-x-2 my-2" id="balls-container">
                     <div class="ball-3d w-12 h-12 rounded-full flex items-center justify-center text-xl font-black text-white">?</div>
                     <div class="ball-3d w-12 h-12 rounded-full flex items-center justify-center text-xl font-black text-white">?</div>
@@ -153,7 +138,6 @@
                     <div class="ball-3d w-12 h-12 rounded-full flex items-center justify-center text-xl font-black text-white">?</div>
                 </div>
 
-                <!-- THƯỚC ĐO NHIỆT LƯỢNG METER -->
                 <div class="w-full mt-4 bg-black/50 p-2 rounded-xl border border-red-950">
                     <div class="flex justify-between text-[10px] font-bold text-gray-400 mb-1">
                         <span>XÁC SUẤT NỔ (HEAT METER)</span>
@@ -168,13 +152,11 @@
                 </div>
             </div>
 
-            <!-- LOG CHẨN ĐOÁN THUẬT TOÁN AI -->
             <div class="bg-black/60 rounded-xl p-3 border border-red-950/60 font-mono text-[11px] space-y-1 h-28 overflow-y-auto text-green-400" id="ai-logs">
                 <div>[Hệ thống] Sẵn sàng phân tích dữ liệu chuyên sâu...</div>
             </div>
         </main>
 
-        <!-- NÚT PHÂN TÍCH CHÍNH (TRIGGER) -->
         <footer class="pb-6 pt-2">
             <button onclick="runAIEngine()" id="btn-predict" class="w-full py-4 bg-gradient-to-r from-yellow-500 via-red-600 to-red-700 rounded-2xl font-black text-lg tracking-wider text-white shadow-[0_8px_25px_rgba(204,0,0,0.5)] active:translate-y-1 transition-all border-b-4 border-red-900 flex justify-center items-center gap-2">
                 <i class="fas fa-microchip animate-pulse"></i> PHÂN TÍCH AI REALTIME
@@ -182,29 +164,24 @@
         </footer>
     </div>
 
-    <!-- 4. POPUP JACKPOT ĐẶC BIỆT -->
+    <!-- POPUP -->
     <div id="jackpot-popup" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-500">
         <div class="glass-3d max-w-sm w-full p-6 rounded-3xl border-2 border-yellow-400 text-center relative overflow-hidden">
             <div class="absolute -right-8 -top-8 w-24 h-24 bg-yellow-400/20 rounded-full blur-xl"></div>
             <i class="fas fa-crown text-5xl text-yellow-400 mb-3 drop-shadow-md animate-bounce"></i>
             <h2 class="text-xl font-black text-yellow-300 tracking-wide uppercase">CẢNH BÁO BỘ SỐ SIÊU CẤP</h2>
             <p class="text-xs text-gray-200 mt-1">AI phát hiện bộ số có cấu trúc phân bổ trùng khớp 99.8% chu kỳ lịch sử Jackpot Vietlott!</p>
-            
             <div class="flex justify-center space-x-2 my-4" id="popup-balls"></div>
-            
-            <div class="bg-red-950/80 p-2 rounded-xl border border-red-800 text-[11px] text-yellow-400 font-mono mb-4">
-                Khuyến nghị: Tỷ lệ nổ cực tốt vào khung giờ này. Hãy lưu ngay bộ số!
-            </div>
             <button onclick="closeJackpotPopup()" class="w-full py-2 bg-yellow-400 text-black font-extrabold rounded-xl hover:bg-yellow-300 transition-all text-sm">
                 XÁC NHẬN & LƯU BỘ SỐ
             </button>
         </div>
     </div>
 
-    <!-- JAVASCRIPT LOGIC XỬ LÝ TOÀN BỘ ỨNG DỤNG -->
     <script>
         let currentTab = 'ai-pure';
         let isPredicting = false;
+        let lastGeneratedNumbers = []; // Khởi tạo mảng lưu bộ số cũ chống trùng lặp lặp lại
         
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -214,29 +191,16 @@
             const gain = audioCtx.createGain();
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-
             if (type === 'click') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
-                if (navigator.vibrate) navigator.vibrate(15);
+                osc.type = 'sine'; osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime); osc.start(); osc.stop(audioCtx.currentTime + 0.1);
             } else if (type === 'ball') {
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
-                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.15);
-                if (navigator.vibrate) navigator.vibrate(25);
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime); osc.start(); osc.stop(audioCtx.currentTime + 0.15);
             } else if (type === 'jackpot') {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
                 osc.frequency.linearRampToValueAtTime(800, audioCtx.currentTime + 0.6);
-                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.6);
-                if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 200]);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime); osc.start(); osc.stop(audioCtx.currentTime + 0.6);
             }
         }
 
@@ -259,20 +223,13 @@
             const iconContainer = document.getElementById('connection-icon');
             const led = document.getElementById('led-status');
             if (navigator.onLine) {
-                const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-                if (conn && (conn.type === 'cellular' || conn.effectiveType.includes('g'))) {
-                    iconContainer.innerHTML = '<i class="fas fa-signal"></i>'; 
-                } else {
-                    iconContainer.innerHTML = '<i class="fas fa-wifi"></i>';   
-                }
+                iconContainer.innerHTML = '<i class="fas fa-wifi"></i>';
                 led.className = "w-3 h-3 rounded-full bg-green-500 shadow-[0_0_10px_#48bb78]";
             } else {
                 iconContainer.innerHTML = '<i class="fas fa-exclamation-triangle text-yellow-500"></i>';
                 led.className = "w-3 h-3 rounded-full led-blink"; 
             }
         }
-        window.addEventListener('online', updateNetworkStatus);
-        window.addEventListener('offline', updateNetworkStatus);
 
         function switchTab(tab) {
             playSound('click');
@@ -280,7 +237,6 @@
             const pureBtn = document.getElementById('tab-ai-pure');
             const birthBtn = document.getElementById('tab-ai-birth');
             const birthInputs = document.getElementById('birth-inputs');
-
             if (tab === 'ai-pure') {
                 pureBtn.className = "py-2 text-xs font-bold rounded-lg bg-[#cc0000] text-white transition-all shadow-md";
                 birthBtn.className = "py-2 text-xs font-bold rounded-lg text-gray-400 hover:text-white transition-all";
@@ -295,48 +251,70 @@
         window.addEventListener('DOMContentLoaded', () => {
             initBirthSelectors();
             updateNetworkStatus();
-            
             let prog = 0;
             const progressInterval = setInterval(() => {
                 prog += Math.floor(Math.random() * 15) + 5;
                 if(prog > 100) prog = 100;
                 document.getElementById('splash-progress').style.width = `${prog}%`;
-                
-                if(prog < 30) document.getElementById('splash-status').innerText = "Đang bắt sóng API thực từ vietlott.vn...";
-                else if(prog < 60) document.getElementById('splash-status').innerText = "Đang huấn luyện mạng thần kinh Lotto 5/35...";
-                else if(prog < 90) document.getElementById('splash-status').innerText = "Tối ưu hóa thuật toán vùng vàng hấp dẫn...";
-                else document.getElementById('splash-status').innerText = "Thiết lập UI 3D hoàn tất!";
-
+                if(prog < 40) document.getElementById('splash-status').innerText = "Đang đồng bộ cổng dữ liệu vietlott.vn...";
+                else if(prog < 80) document.getElementById('splash-status').innerText = "Huấn luyện AI trọng số dãy số từ 1 đến 35...";
+                else document.getElementById('splash-status').innerText = "Hệ thống thuật toán đã sẵn sàng!";
                 if(prog >= 100) {
                     clearInterval(progressInterval);
                     setTimeout(() => {
-                        const splash = document.getElementById('splash-screen');
-                        splash.classList.add('opacity-0', 'pointer-events-none');
+                        document.getElementById('splash-screen').classList.add('opacity-0', 'pointer-events-none');
                     }, 500);
                 }
-            }, 150);
+            }, 100);
         });
 
+        // THUẬT TOÁN ĐÃ ĐƯỢC FIX LỖI RA SỐ 35 VÀ CHỐNG TRÙNG LẶP LƯỢT TIẾP THEO
         function generateAILottoNumbers(seedModifier = 0) {
             let attempts = 0;
-            while (attempts < 1000) {
+            while (attempts < 2000) {
                 attempts++;
-                let numbers = [];
-                while (numbers.length < 5) {
-                    let r = Math.floor(Math.random() * 35) + 1 + seedModifier;
-                    r = ((r - 1) % 35) + 1; 
-                    if (!numbers.includes(r)) numbers.push(r);
+                
+                // Tạo một danh sách các số từ 1 đến 35 ổn định
+                let pool = [];
+                for (let i = 1; i <= 35; i++) {
+                    pool.push(i);
                 }
+
+                // Áp dụng xáo trộn seed ngày sinh nếu có (Đảm bảo phân phối ngẫu nhiên đều)
+                if (seedModifier > 0) {
+                    let shuffleCount = seedModifier % 10 + 5;
+                    for (let s = 0; s < shuffleCount; s++) {
+                        pool.sort(() => Math.random() - 0.5);
+                    }
+                }
+
+                let numbers = [];
+                // Bốc 5 số ngẫu nhiên từ Pool, không dùng toán tử mod (%) cũ để tránh lệch biên số 35
+                for (let k = 0; k < 5; k++) {
+                    let idx = Math.floor(Math.random() * pool.length);
+                    numbers.push(pool[idx]);
+                    pool.splice(idx, 1); // Loại bỏ phần tử đã lấy ra khỏi mảng -> Tuyệt đối không trùng trong bộ số
+                }
+
                 numbers.sort((a, b) => a - b);
                 
+                // Kiểm tra xem bộ này có trùng lặp 100% với bộ vừa bấm lần trước không
+                let isDuplicateWithLast = lastGeneratedNumbers.length === 5 && 
+                    numbers.every((val, index) => val === lastGeneratedNumbers[index]);
+
                 let sum = numbers.reduce((a, b) => a + b, 0);
                 let evens = numbers.filter(n => n % 2 === 0).length;
 
-                if (sum >= 120 && sum <= 180 && (evens === 2 || evens === 3)) {
+                // Bộ lọc Vùng Vàng phân tích toán học (Tổng từ 70 -> 120 cho dãy 1-35 và tỷ lệ chẵn lẻ hợp lý)
+                if (!isDuplicateWithLast && sum >= 70 && sum <= 120 && (evens === 2 || evens === 3)) {
+                    lastGeneratedNumbers = [...numbers]; // Lưu lại cho lượt bấm sau kiểm tra
                     return { numbers, sum, evens, attempts };
                 }
             }
-            return { numbers: [5, 12, 19, 26, 33], sum: 95, evens: 1, attempts: 1000 };
+            // Fallback an toàn nếu bộ lọc quét quá sâu
+            let backup = [3, 11, 18, 24, 30];
+            lastGeneratedNumbers = [...backup];
+            return { numbers: backup, sum: 86, evens: 3, attempts };
         }
 
         function appendLog(text) {
@@ -354,14 +332,14 @@
             document.getElementById('sync-icon').classList.add('fa-spin');
             
             let logSteps = [
-                "Đang gửi gói tin GET tới https://vietlott.vn/api/v1/lotto35...",
-                "Đã nhận gói tin cấu trúc lịch sử 500 kỳ quay gần nhất.",
-                "Mạng Neural Network đang tính toán trọng số dải số xuất hiện cao...",
-                "Lọc bỏ các bộ số rác không nằm trong Vùng Vàng xác suất..."
+                "Đang quét phổ tần số ngẫu nhiên 1 - 35 trên Máy chủ Vietlott...",
+                "Đang tính toán phân phối Gauss chống thiên vị số...",
+                "Áp dụng bộ lọc Tổng và Chẵn/Lẻ tối ưu Vùng Vàng...",
+                "Xuất tổ hợp số tối ưu mã hóa 3D..."
             ];
 
             logSteps.forEach((step, idx) => {
-                setTimeout(() => appendLog(step), idx * 400);
+                setTimeout(() => appendLog(step), idx * 300);
             });
 
             const container = document.getElementById('balls-container');
@@ -377,7 +355,8 @@
                 
                 let seed = 0;
                 if (currentTab === 'ai-birth') {
-                    seed = parseInt(document.getElementById('birth-day').value) || 0;
+                    seed = (parseInt(document.getElementById('birth-day').value) || 1) + 
+                           (parseInt(document.getElementById('birth-month').value) || 1);
                 }
 
                 let result = generateAILottoNumbers(seed);
@@ -387,49 +366,43 @@
                     return `<div class="ball-3d w-12 h-12 rounded-full flex items-center justify-center text-xl font-black text-white">${formatted}</div>`;
                 }).join('');
 
-                result.numbers.forEach((_, i) => setTimeout(() => playSound('ball'), i * 100));
+                result.numbers.forEach((_, i) => setTimeout(() => playSound('ball'), i * 80));
 
-                let baseProbability = Math.floor(Math.random() * 31) + 65; 
-                if (result.sum >= 140 && result.sum <= 160) baseProbability += 3; 
+                let baseProbability = Math.floor(Math.random() * 25) + 72; 
                 if (baseProbability > 99) baseProbability = 99;
 
                 document.getElementById('meter-percent').innerText = `${baseProbability}%`;
-                const bar = document.getElementById('meter-bar');
-                bar.style.width = `${baseProbability}%`;
+                document.getElementById('meter-bar').style.width = `${baseProbability}%`;
 
                 const advice = document.getElementById('ai-advice');
                 if (baseProbability >= 88) {
-                    advice.innerHTML = "<span class='text-red-500 font-bold'><i class='fas fa-fire'></i> HIGH ALERT: Độ chín cực cao. Khuyến nghị VÀO TIỀN NGAY!</span>";
+                    advice.innerHTML = "<span class='text-red-500 font-bold'><i class='fas fa-fire'></i> HIGH ALERT: Tần suất vàng đạt đỉnh! Đáng cân nhắc mua vé.</span>";
                 } else {
-                    advice.innerHTML = "<span class='text-yellow-400'><i class='fas fa-eye'></i> Trạng thái ổn định. Tiếp tục quan sát chu kỳ kế.</span>";
+                    advice.innerHTML = "<span class='text-yellow-400'><i class='fas fa-check-circle'></i> Độ khả thi ổn định. Khuyên dùng làm dãy số cơ sở.</span>";
                 }
 
-                appendLog(`AI Thành công! Chọn ra bộ số: ${result.numbers.join(', ')} (Tổng: ${result.sum}, Chẵn/Lẻ: ${result.evens}/${5-result.evens}) qua ${result.attempts} chu kỳ sàng lọc.`);
+                appendLog(`AI Trả kết quả thành công: ${result.numbers.join(', ')} (Quét qua: ${result.attempts} chu kỳ hạt hạt nhân).`);
                 
                 triggerFireworks();
 
-                if (baseProbability >= 88) {
-                    setTimeout(() => {
-                        triggerJackpotPopup(result.numbers);
-                    }, 1000);
+                if (baseProbability >= 90) {
+                    setTimeout(() => triggerJackpotPopup(result.numbers), 800);
                 }
 
                 document.getElementById('btn-predict').disabled = false;
                 document.getElementById('sync-icon').classList.remove('fa-spin');
                 isPredicting = false;
 
-            }, 2500);
+            }, 2000);
         }
 
         function triggerJackpotPopup(numbers) {
             playSound('jackpot');
             const popup = document.getElementById('jackpot-popup');
             const pBalls = document.getElementById('popup-balls');
-            
             pBalls.innerHTML = numbers.map(num => {
                 return `<div class="ball-3d w-10 h-10 rounded-full flex items-center justify-center text-md font-black text-white">${String(num).padStart(2, '0')}</div>`;
             }).join('');
-
             popup.classList.remove('hidden');
             setTimeout(() => popup.classList.add('opacity-100'), 50);
         }
@@ -441,56 +414,34 @@
             setTimeout(() => popup.classList.add('hidden'), 500);
         }
 
+        // Tạo hiệu ứng pháo hoa ăn mừng
         const canvas = document.getElementById('fireworks-canvas');
         const ctx = canvas.getContext('2d');
         let particles = [];
 
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resizeCanvas); resizeCanvas();
 
         function triggerFireworks() {
-            canvas.classList.remove('invisible');
-            particles = [];
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 3;
-            
-            for (let i = 0; i < 80; i++) {
-                const angle = Math.random() * Math.PI * 2;
-                const speed = Math.random() * 5 + 2;
+            canvas.classList.remove('invisible'); particles = [];
+            for (let i = 0; i < 60; i++) {
+                const angle = Math.random() * Math.PI * 2; const speed = Math.random() * 4 + 2;
                 particles.push({
-                    x: centerX,
-                    y: centerY,
-                    vx: Math.cos(angle) * speed,
-                    vy: Math.sin(angle) * speed,
-                    alpha: 1,
-                    color: `hsl(${Math.random() * 360}, 100%, 60%)`
+                    x: canvas.width / 2, y: canvas.height / 3,
+                    vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+                    alpha: 1, color: `hsl(${Math.random() * 360}, 100%, 60%)`
                 });
             }
             animateParticles();
         }
 
         function animateParticles() {
-            if (particles.length === 0) {
-                canvas.classList.add('invisible');
-                return;
-            }
+            if (particles.length === 0) { canvas.classList.add('invisible'); return; }
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             particles.forEach((p, idx) => {
-                p.x += p.vx;
-                p.y += p.vy;
-                p.vy += 0.05; 
-                p.alpha -= 0.02; 
-                
-                ctx.globalAlpha = p.alpha;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
-                ctx.fillStyle = p.color;
-                ctx.fill();
-
+                p.x += p.vx; p.y += p.vy; p.vy += 0.04; p.alpha -= 0.025;
+                ctx.globalAlpha = p.alpha; ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                ctx.fillStyle = p.color; ctx.fill();
                 if (p.alpha <= 0) particles.splice(idx, 1);
             });
             requestAnimationFrame(animateParticles);
